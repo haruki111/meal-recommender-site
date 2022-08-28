@@ -1,0 +1,48 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  flex-flow:column;
+  min-height: 100vh
+}
+
+main{
+  flex: 1;
+}
+
+.avatar {
+  vertical-align: middle;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+}
+
+.card-profile {
+  width: 700px;
+  border: 0;
+  border-radius: 1rem;
+  box-shadow: 0 0.2rem 0.2rem 0 rgba(0,0,0,0.1);
+}
+
+.profile_table {
+  width: 100%;
+  border: 1px solid #D1DBEB;
+  border-radius: 8px;
+  border-collapse: separate;
+  overflow: hidden
+}
+
+.profile_table .header {
+  width: 200px;
+  padding: 16px 24px;
+  text-align: left;
+  background: #F1F5FA;
+}
+
+.profile_table .data {
+  padding: 16px 24px;
+}

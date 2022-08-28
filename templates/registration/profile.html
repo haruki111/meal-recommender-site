@@ -1,0 +1,35 @@
+{% extends 'base.html' %} {% load static %} {% block content %}
+
+<div class="card card-profile my-5 mx-auto">
+  <div class="card-body">
+    <h3 class="card-title text-center">プロフィール</h3>
+    <table class="profile_table mb-4">
+      <div class="mb-2">
+        {% if user.icon %}
+        <img src="{{ user.icon.url }}" class="user-icon" />
+        {% else %}
+        <img src="{% static 'images/user_icon.png' %}" class="avator" />
+        {% endif %}
+      </div>
+      <tbody>
+        <tr>
+          <th class="header">名前</th>
+          <td class="data">{{user.user_name}}</td>
+        </tr>
+        <tr>
+          <th class="header">メールアドレス</th>
+          <td class="data">{{user.email}}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="button d-flex justify-content-center">
+      <a
+        class="btn btn-lg btn-warning btn-block"
+        href="{% url 'accounts:profile_edit' %}"
+        >編集する</a
+      >
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
