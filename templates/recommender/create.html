@@ -1,0 +1,53 @@
+{% extends 'base.html' %} {% block content %} {% load widget_tweaks %}
+<div id="app">
+  <form method="post">
+    {% csrf_token %}
+    <div class="row">
+      <div class="col-sm-7 col-md-6 mx-auto">
+        {% render_field form.name class="form-control mt-5 mb-2 rounded text-dark-light" placeholder="Meal Name"%}
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-7 col-md-6 mx-auto">
+        {% render_field form.countryOfOrigin placeholder="Country of Origin" %}
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-7 col-md-6 mx-auto">
+        {% render_field form.imageUrl placeholder="Image Url" %}
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-7 col-md-6 mx-auto">
+        {% render_field form.description placeholder="Description" cols="40" rows='3' %}
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-7 col-md-6 mx-auto">
+         {% render_field form.tag class="pref-select form-control"%}
+      </div>
+    </div>
+    
+    <div class="text-center py-3">
+      <button
+        type="submit"
+        class="btn btn-lg bg-white text-pink shadow border-orange"
+      >
+        create
+      </button>
+    </div>
+  </form>
+</div>
+
+{% endblock content %}
+  
+{% block script %}
+<script>
+  $('.pref-select').select2({
+    multiple: true, //複数選択可能
+    placeholder: "選択してください", //プレースホルダーを設定
+    allowClear: true, //下矢印を消去
+    closeOnSelect: false, //選択するたびに閉じないよう設定
+  });
+</script>
+{% endblock script %}

@@ -1,0 +1,113 @@
+{% extends 'base.html' %} {% block content %}
+
+<div class="text-center m-auto mw-100" style="width: 500px">
+  <h3 class="text-center">{{meal.name}}</h3>
+  <div>
+    <img
+      src="{{meal.imageUrl}}"
+      class="mw-100"
+      style="width: 500px"
+      alt="..."
+    />
+  </div>
+  <div class="text-start">
+    <p>County Origin: {{meal.countryOfOrigin}}</p>
+    <p>Description: {{meal.description}}</p>
+    <p>Score: [[avgRating]]([[votes]])</p>
+  </div>
+  {% if not user.is_anonymous %}
+    <form
+      @submit.prevent="voteRating()"
+      enctype="multipart/form-data"
+      method="post"
+    >
+      <div class="d-flex justify-content-around">
+        <h5>
+          <input
+            v-model="val"
+            type="range"
+            name="rating"
+            max="5"
+            min="0"
+            step="0.1"
+            required=""
+            id="id_rating"
+          />
+          <span id="rating-display" class="h2 pl-3">[[val]]</span>
+        </h5>
+
+        <div>
+          <button type="submit" class="btn btn-primary">投票</button>
+        </div>
+      </div>
+    </form>
+  {% endif %}
+</div>
+
+{% endblock content %} {% block script %}
+<script>
+  const app = {
+    data() {
+      return {
+        totalRating: 0,
+        votes: 0,
+        val: 3,
+      };
+    },
+    mounted() {
+      axios
+        .get('{% url "recommender:detail_axios" meal.pk %}')
+        .then((response) => {
+          const data = response.data[0];
+          this.totalRating = data.totalRating;
+          this.votes = data.votes;
+        })
+        .catch((error) => console.log(error));
+    },
+    methods: {
+      voteRating() {
+        let data = new FormData();
+        data.append("rating", this.val);
+
+        sendRequest(
+          '{% url "recommender:detail_axios" meal.pk %}',
+          "post",
+          data
+        )
+          .then((response) => {
+            this.totalRating += Number(this.val);
+            this.votes++;
+            this.val = 3;
+          })
+          .catch((errors) => console.log(errors));
+      },
+    },
+    computed: {
+      avgRating() {
+        if (!this.totalRating) {
+          return 0;
+        }
+
+        let avg = Math.floor((this.totalRating / this.votes) * 10) / 10;
+        return avg.toFixed(1);
+      },
+    },
+    delimiters: ["[[", "]]"],
+  };
+  Vue.createApp(app).mount("#app");
+
+  function sendRequest(url, method, data) {
+    const r = axios({
+      method: method,
+      url: url,
+      data: data,
+      xsrfCookieName: "csrftoken",
+      xsrfHeaderName: "x-CSRFToken",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    });
+    return r;
+  }
+</script>
+{% endblock script %}

@@ -1,4 +1,28 @@
 {% extends 'base.html' %} {% block content %}
-<div class="row">test</div>
+<div class="row">
+  <div class="col-8">
+    <h1>Recently</h1>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+      {% for meal in recentlyAdded %}
+      <div class="col">
+        <a
+          href="{% url 'recommender:detail' meal.pk %}"
+          class="card text-decoration-none text-body"
+        >
+          <img
+            src="{{meal.imageUrl}}"
+            class="card-img-top card-image"
+            alt="..."
+          />
+          <div class="card-body">
+            <h5 class="card-title">{{meal.name}}</h5>
+            <p class="card-text">{{meal.avgRating}}({{meal.numberOfVotes}})</p>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
 
 {% endblock content %}

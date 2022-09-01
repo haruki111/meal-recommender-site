@@ -16,7 +16,7 @@ class Tag(models.Model):
 
 class Meal(models.Model):
     name = models.CharField(max_length=100)
-    description = models.CharField(max_length=100)
+    description = models.TextField(max_length=100)
     imageUrl = models.CharField(max_length=200)
     countryOfOrigin = models.CharField(max_length=100)
     user = models.ForeignKey(get_user_model(),
