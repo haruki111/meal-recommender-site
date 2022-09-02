@@ -1,0 +1,56 @@
+{% extends 'base.html' %} {% block content %}
+
+<div class="row d-flex justify-content-center justify-content-center">
+  <div class="col-5 mx-3">
+    <h3>Votes</h3>
+    {% for meal in recentlyAdded %}
+    <a
+      href="{% url 'recommender:detail' meal.pk %}"
+      class="card text-decoration-none text-body d-flex flex-row mb-3"
+    >
+      <img
+        src="{{meal.imageUrl}}"
+        class="card-img-top card-image"
+        alt="..."
+        style="width: 100px; height: 100ox"
+      />
+      <div class="card-body">
+        <h5 class="card-title">{{meal.name}}</h5>
+        <div class="d-flex">
+          <p class="card-text me-3 mb-0">
+            {{meal.avgRating}}({{meal.numberOfVotes}})
+          </p>
+          <p class="mb-0">{{meal.comparisonDate}}</p>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  <div class="col-5 mx-3">
+    <h3>Like</h3>
+    {% for likeMeal in likeMeals %} {{meals}}
+    <a
+      href="{% url 'recommender:detail' likeMeal.meal.pk %}"
+      class="card text-decoration-none text-body d-flex flex-row mb-3"
+    >
+      <img
+        src="{{likeMeal.meal.imageUrl}}"
+        class="card-img-top card-image"
+        alt="..."
+        style="width: 100px; height: 100ox"
+      />
+      <div class="card-body">
+        <h5 class="card-title">{{likeMeal.meal.name}}</h5>
+        <div class="d-flex">
+          <p class="card-text me-3 mb-0">
+            {{likeMeal.meal.avgRating}}({{likeMeal.meal.numberOfVotes}})
+          </p>
+          <p class="mb-0">{{likeMeal.meal.comparisonDate}}</p>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock content %}

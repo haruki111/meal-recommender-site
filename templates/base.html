@@ -23,7 +23,6 @@
       <div class="container-fluid container">
         <div>
           <a class="navbar-brand" href="{% url 'recommender:index'%} ">Home</a>
-          <a href="" class="ps-5">Morning</a>
         </div>
 
         <!-- 末ログイン -->
@@ -70,6 +69,11 @@
             <li>
               <a class="dropdown-item" href="{% url 'accounts:profile' %}"
                 >{{user.user_name}}</a
+              >
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'recommender:history' %}"
+                >See History</a
               >
             </li>
             <li>

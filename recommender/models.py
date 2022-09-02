@@ -54,6 +54,33 @@ class Meal(models.Model):
         count = MealRating.objects.filter(meal=self).count()
         return count
 
+    def comparisonDate(self):
+        dateNow = timezone.now()
+        dateAdded = self.dateAdded
+
+        hour_diff = (dateNow - dateAdded).seconds // 3600
+
+        # 日数と週の扱い
+        date_diff = (dateNow - dateAdded).days
+
+        # 月の扱い
+        month_diff = (dateNow.month - dateAdded.month) + \
+            (dateNow.year - dateAdded.year) * 12
+        if dateNow.day - dateAdded.day < 0:
+            month_diff -= 1
+
+        # 年の扱い
+        years_diff = month_diff // 12
+
+        if years_diff:
+            return str(years_diff) + '年前'
+        elif month_diff:
+            return str(month_diff) + 'ヶ月前'
+        elif date_diff:
+            return str(date_diff) + '日前'
+        else:
+            return str(hour_diff) + '時間前'
+
     def __str__(self):
         return self.name
 
@@ -72,4 +99,4 @@ class MealRating(models.Model):
     dateOfRating = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return self.meal
+        return self.meal.name

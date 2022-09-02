@@ -7,4 +7,5 @@ urlpatterns = [
     path('create/', views.MealCreateView.as_view(), name='create'),
     path('detail/<int:pk>/', views.MealDetail.as_view(), name='detail'),
     path('get_detail/<int:pk>/', views.meal_detail_axios, name='detail_axios'),
+    path('history/', views.HistoryView.as_view(), name='history'),
 ]
