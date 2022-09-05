@@ -1,23 +1,15 @@
-from django.shortcuts import render
 from django.views.generic import TemplateView, DetailView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Meal, Tag, MealRating
 from .forms import CreateForm, DetailForm
 from django.http import JsonResponse, HttpResponseServerError
 from django.urls import reverse_lazy
+from django.db.models import Q
+import json
 
 
 class IndexView(TemplateView):
     template_name = 'index.html'
-    model = Meal
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        context["recentlyAdded"] = Meal.objects.all().order_by(
-            '-dateAdded')[0:5]
-
-        return context
 
 
 class MealCreateView(LoginRequiredMixin, FormView):
@@ -66,6 +58,61 @@ class MealDetail(DetailView):
     template_name: str = 'recommender/detail.html'
     model = Meal
     context_object_name = "meal"
+
+
+def index_axios(request):
+    if request.method == "GET":
+        meals = Meal.objects.all().order_by('-dateAdded')[0:6]
+        tags = Tag.objects.all()
+
+        results = {'meals': get_meal_results(meals[0:6])}
+        results.update({'tags': {'name': [tag.name for tag in tags],
+                                 'id': [tag.pk for tag in tags]}})
+        results.update({'mealsNum': Meal.objects.all().count()})
+        results.update({'nowOrder': 1})
+
+        return JsonResponse(results, safe=False)
+
+    if request.method == "POST":
+        selectChips = json.loads(request.POST.get("selectChips"))
+        rangeMeals = json.loads(request.POST.get("rangeMeals"))
+        sl = slice(6 * (rangeMeals-1), 6 * rangeMeals)
+
+        meals = []
+        # All選択時
+        if selectChips[0] == 0:
+            meals = Meal.objects.all().order_by('-dateAdded')
+        else:
+            meals = Meal.objects.filter(tag=selectChips[0])
+
+            # ２個以上chip選択
+            if len(selectChips) >= 2:
+                for selectChip in selectChips[1:]:
+                    meals = meals.filter(tag=selectChip)
+
+        mealsNum = meals.count()
+        return JsonResponse({"status": 'Success', 'result': get_meal_results(meals[sl]), 'nowOrder': (rangeMeals-1)*6 + 1, 'mealsNum': mealsNum})
+
+
+def get_meal_results(meals):
+    results = []
+
+    for meal in meals:
+        results.append(
+            {
+                "name": meal.name,
+                "description": meal.description,
+                "imageUrl": meal.imageUrl,
+                "countryOfOrigin": meal.countryOfOrigin,
+                "user": str(meal.user),
+                "dateAdded": meal.dateAdded,
+                "id": int(meal.pk),
+                "avgRating": int(meal.avgRating()),
+                "numberOfVotes": int(meal.numberOfVotes())
+            }
+        )
+
+    return results
 
 
 def meal_detail_axios(request, pk):

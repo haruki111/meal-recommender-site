@@ -30,13 +30,7 @@ class Meal(models.Model):
         if self.numberOfVotes() == 0:
             return 0
 
-        votes = MealRating.objects.filter(meal=self)
-
-        total = 0
-        for vote in votes:
-            total += vote.rating
-
-        return math.floor(total / self.numberOfVotes()*10)/10
+        return math.floor(self.totalRating() / self.numberOfVotes()*10)/10
 
     def totalRating(self):
         if not self.numberOfVotes():
@@ -51,8 +45,7 @@ class Meal(models.Model):
         return float(total)
 
     def numberOfVotes(self):
-        count = MealRating.objects.filter(meal=self).count()
-        return count
+        return MealRating.objects.filter(meal=self).count()
 
     def comparisonDate(self):
         dateNow = timezone.now()

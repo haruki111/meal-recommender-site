@@ -1,28 +1,283 @@
 {% extends 'base.html' %} {% block content %}
-<div class="row">
-  <div class="col-8">
-    <h1>Recently</h1>
+<div
+  class="chips-wrapper d-flex justify-content-between"
+  style="overflow-x: auto"
+>
+  <span
+    v-for="(chip, index) of chips"
+    :key="index"
+    @click="clickChips(chip)"
+    :class="getChipsTextColor(chip.isSelect)"
+    class="badge rounded-pill text-dark border me-2 fs-6 fw-semibold"
+    :style="{background:getChipsBgColor(chip.isSelect)}"
+    style="cursor: pointer"
+    >[[chip.text]]
+  </span>
+  <span
+    @click="clickRecommended(recommended)"
+    :class="getChipsTextColor(recommended.isSelect)"
+    class="badge rounded-pill text-dark border me-2 fs-6 fw-semibold"
+    :style="{background:getChipsBgColor(recommended.isSelect)}"
+    style="cursor: pointer"
+    >[[recommended.text]]
+  </span>
+</div>
+<div class="row mt-4">
+  <div class="col-8 m-auto">
     <div class="row row-cols-1 row-cols-md-3 g-4">
-      {% for meal in recentlyAdded %}
-      <div class="col">
+      <div v-for="(meal, index) of meals" :key="index" class="col">
         <a
-          href="{% url 'recommender:detail' meal.pk %}"
+          @click="transitionDetail(meal.id)"
           class="card text-decoration-none text-body"
+          style="cursor: pointer"
         >
-          <img
-            src="{{meal.imageUrl}}"
-            class="card-img-top card-image"
-            alt="..."
-          />
+          <img :src="meal.imageUrl" class="card-img-top card-image" alt="..." />
           <div class="card-body">
-            <h5 class="card-title">{{meal.name}}</h5>
-            <p class="card-text">{{meal.avgRating}}({{meal.numberOfVotes}})</p>
+            <h5 class="card-title">[[meal.name]]</h5>
+            <p class="card-text">[[meal.avgRating]]([[meal.numberOfVotes]])</p>
           </div>
         </a>
       </div>
-      {% endfor %}
     </div>
   </div>
 </div>
+<div v-if="mealsNum" class="d-flex justify-content-center mt-4">
+  <ul class="Pagination">
+    <li class="Pagination-Item">
+      <a
+        @click="getRangeMealsPrev()"
+        :class="isPassive('prev')"
+        class="Pagination-Item-Link"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="Pagination-Item-Link-Icon"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+          />
+        </svg>
+      </a>
+    </li>
+    <li v-for="n in getPageNum()" :key="n" class="Pagination-Item">
+      <a
+        @click="getRangeMeals(n)"
+        :class="isActive(n)"
+        class="Pagination-Item-Link"
+        ><span style="cursor: pointer">[[n]]</span></a
+      >
+    </li>
+    <li class="Pagination-Item">
+      <a
+        @click="getRangeMealsNext()"
+        :class="isPassive('next')"
+        class="Pagination-Item-Link"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="Pagination-Item-Link-Icon"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M13 5l7 7-7 7M5 5l7 7-7 7"
+          />
+        </svg>
+      </a>
+    </li>
+  </ul>
+</div>
+<div v-else class="text-center">
+  <h3>Don't find</h3>
+</div>
 
-{% endblock content %}
+{% endblock content %} {% block script %}
+<script>
+  const app = {
+    data() {
+      return {
+        chips: [{ text: "All", id: 0, isSelect: true }],
+        recommended: { text: "Recommended", id: 10, isSelect: false },
+        selectChips: [0],
+        meals: [],
+        mealsNum: 0,
+        nowOrder: 0,
+        tags: [],
+      };
+    },
+    mounted() {
+      axios
+        .get('{% url "recommender:index_axios" %}')
+        .then((response) => {
+          tags = response.data.tags;
+          for (let i = 0; i < tags.name.length; i++) {
+            this.chips.push({
+              text:
+                tags.name[i].substring(0, 1).toUpperCase() +
+                tags.name[i].substring(1),
+              id: tags.id[i],
+              isSelect: false,
+            });
+          }
+          const meals = response.data.meals;
+          for (const data in meals) {
+            let item = meals[data];
+            this.meals.push(item);
+          }
+          this.mealsNum = response.data.mealsNum;
+          this.nowOrder = response.data.nowOrder;
+        })
+        .catch((error) => console.log(error));
+    },
+    methods: {
+      clickChips(chip) {
+        if (this.recommended.isSelect) {
+          this.recommended.isSelect = false;
+          this.selectChips = [];
+        }
+        //他選択中にAll押した場合
+        if (
+          this.chips[0].text === chip.text &&
+          this.chips[0].isSelect === false
+        ) {
+          for (let chip of this.chips) {
+            chip.isSelect = false;
+          }
+          chip.isSelect = true;
+          this.selectChips = [0];
+          this.getSelectMeal();
+          return;
+        }
+        chip.isSelect = !chip.isSelect;
+
+        chip.isSelect
+          ? this.selectChips.push(chip.id)
+          : this.selectChips.splice(this.selectChips.indexOf(chip.id), 1);
+
+        if (
+          this.chips[0].text !== chip.text &&
+          this.chips[0].isSelect === true
+        ) {
+          this.chips[0].isSelect = false;
+          this.selectChips.splice(this.selectChips.indexOf(0), 1);
+        }
+        if (!this.selectChips.length) {
+          this.chips[0].isSelect = true;
+          this.selectChips.push(0);
+        }
+        this.getSelectMeal();
+      },
+      clickRecommended(chip) {
+        chip.isSelect = !chip.isSelect;
+        if (chip.isSelect) {
+          for (let chip of this.chips) {
+            chip.isSelect = false;
+          }
+          this.selectChips = [chip.id];
+        } else {
+          // Allを選択
+          this.chips[0].isSelect = true;
+          this.selectChips = [0];
+        }
+      },
+      getChipsTextColor(isSelect) {
+        return isSelect ? "text-white" : "text-dark";
+      },
+      getChipsBgColor(isSelect) {
+        return isSelect ? "#030303" : "rgba(0, 0, 0, 0.05)";
+      },
+      transitionDetail(id) {
+        window.location.href = "/detail/" + id + "/";
+      },
+      getSelectMeal() {
+        let data = new FormData();
+
+        data.append("selectChips", JSON.stringify(this.selectChips));
+        data.append("rangeMeals", 1);
+
+        this.postMealFilter(data);
+      },
+      getPageNum() {
+        return Math.ceil(this.mealsNum / 6);
+      },
+      //現在のページ
+      getNowPage() {
+        return Math.ceil(this.nowOrder / 6);
+      },
+      isActive(n) {
+        return n == this.getNowPage() ? "isActive" : "";
+      },
+      isPassive(str) {
+        if (str === "prev") {
+          return this.getNowPage() == 1 ? "isPassive" : "";
+        } else if (str == "next") {
+          return this.getNowPage() == this.getPageNum() ? "isPassive" : "";
+        }
+        return "";
+      },
+      getRangeMeals(n) {
+        if (n == this.getNowPage()) {
+          return;
+        }
+
+        let data = new FormData();
+
+        data.append("selectChips", JSON.stringify(this.selectChips));
+        data.append("rangeMeals", n);
+
+        this.postMealFilter(data);
+      },
+      getRangeMealsPrev() {
+        if (this.isPassive("prev") !== "isPassive") {
+          this.getRangeMeals(this.getNowPage() - 1);
+        }
+      },
+      getRangeMealsNext() {
+        if (this.isPassive("next") !== "isPassive") {
+          this.getRangeMeals(this.getNowPage() + 1);
+        }
+      },
+      postMealFilter(data) {
+        sendRequest('{% url "recommender:index_axios" %}', "post", data)
+          .then((response) => {
+            const results = response.data.result;
+            this.meals = [];
+            for (const data in results) {
+              let item = results[data];
+              this.meals.push(item);
+            }
+            this.nowOrder = response.data.nowOrder;
+            this.mealsNum = response.data.mealsNum;
+          })
+          .catch((errors) => console.log(errors));
+      },
+    },
+    delimiters: ["[[", "]]"],
+  };
+  Vue.createApp(app).mount("#app");
+
+  function sendRequest(url, method, data) {
+    const r = axios({
+      method: method,
+      url: url,
+      data: data,
+      xsrfCookieName: "csrftoken",
+      xsrfHeaderName: "x-CSRFToken",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    });
+    return r;
+  }
+</script>
+{% endblock script %}
