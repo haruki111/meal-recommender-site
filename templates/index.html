@@ -13,25 +13,29 @@
     style="cursor: pointer"
     >[[chip.text]]
   </span>
-  <span
-    @click="clickRecommended(recommended)"
-    :class="getChipsTextColor(recommended.isSelect)"
-    class="badge rounded-pill text-dark border me-2 fs-6 fw-semibold"
-    :style="{background:getChipsBgColor(recommended.isSelect)}"
-    style="cursor: pointer"
-    >[[recommended.text]]
-  </span>
 </div>
-<div class="row mt-4">
-  <div class="col-8 m-auto">
-    <div class="row row-cols-1 row-cols-md-3 g-4">
+<div class="d-flex justify-content-end mt-2">
+  Sorted By:&thinsp;
+  <select v-model="sorts.selected" @change="sorts.method">
+    <option
+      v-for="(option, index) in sorts.options"
+      :key="index"
+      :value="option.val"
+    >
+      [[ option.text ]]
+    </option>
+  </select>
+</div>
+<div class="row mt-2">
+  <div class="col-md-7 col-12 mx-auto">
+    <div class="row row-cols-2 row-cols-md-3 g-4">
       <div v-for="(meal, index) of meals" :key="index" class="col">
         <a
           @click="transitionDetail(meal.id)"
           class="card text-decoration-none text-body"
           style="cursor: pointer"
         >
-          <img :src="meal.imageUrl" class="card-img-top card-image" alt="..." />
+          <img :src="meal.imageUrl" class="card-img-top card-image" />
           <div class="card-body">
             <h5 class="card-title">[[meal.name]]</h5>
             <p class="card-text">[[meal.avgRating]]([[meal.numberOfVotes]])</p>
@@ -39,6 +43,29 @@
         </a>
       </div>
     </div>
+  </div>
+  <div v-if="recommendedMeals.length" class="col-md-4 col-12">
+    <h3 class="text-center">Recommended</h3>
+    <a
+      v-for="(meal, index) of recommendedMeals"
+      @click="transitionDetail(meal.id)"
+      class="card text-decoration-none text-body d-flex flex-row mb-3"
+    >
+      <img
+        :src="meal.imageUrl"
+        class="card-img-top card-image"
+        style="width: 100px; height: 100ox"
+      />
+      <div class="card-body">
+        <h5 class="card-title">[[meal.name]]</h5>
+        <div class="d-flex">
+          <p class="card-text me-3 mb-0">
+            [[meal.avgRating]]([[meal.numberOfVotes]])
+          </p>
+          <p class="mb-0">[[meal.comparisonDate]]</p>
+        </div>
+      </div>
+    </a>
   </div>
 </div>
 <div v-if="mealsNum" class="d-flex justify-content-center mt-4">
@@ -107,12 +134,22 @@
     data() {
       return {
         chips: [{ text: "All", id: 0, isSelect: true }],
-        recommended: { text: "Recommended", id: 10, isSelect: false },
         selectChips: [0],
         meals: [],
+        recommendedMeals: [],
         mealsNum: 0,
         nowOrder: 0,
         tags: [],
+        sort: "dateAdded",
+        sorts: {
+          selected: "dateAdded",
+          options: [
+            { text: "Average Rating", val: "avgRating" },
+            { text: "Country Of Origin", val: "countryOfOrigin" },
+            { text: "Date Added", val: "dateAdded" },
+          ],
+          method: this.selectSort,
+        },
       };
     },
     mounted() {
@@ -134,6 +171,13 @@
             let item = meals[data];
             this.meals.push(item);
           }
+
+          const recommended = response.data.recommended;
+          for (const data in recommended) {
+            let item = recommended[data];
+            this.recommendedMeals.push(item);
+          }
+
           this.mealsNum = response.data.mealsNum;
           this.nowOrder = response.data.nowOrder;
         })
@@ -141,10 +185,6 @@
     },
     methods: {
       clickChips(chip) {
-        if (this.recommended.isSelect) {
-          this.recommended.isSelect = false;
-          this.selectChips = [];
-        }
         //他選択中にAll押した場合
         if (
           this.chips[0].text === chip.text &&
@@ -204,6 +244,7 @@
 
         data.append("selectChips", JSON.stringify(this.selectChips));
         data.append("rangeMeals", 1);
+        data.append("orderBy", JSON.stringify(this.sort));
 
         this.postMealFilter(data);
       },
@@ -234,6 +275,7 @@
 
         data.append("selectChips", JSON.stringify(this.selectChips));
         data.append("rangeMeals", n);
+        data.append("orderBy", JSON.stringify(this.sort));
 
         this.postMealFilter(data);
       },
@@ -260,6 +302,10 @@
             this.mealsNum = response.data.mealsNum;
           })
           .catch((errors) => console.log(errors));
+      },
+      selectSort() {
+        this.sort = this.sorts.selected;
+        this.getSelectMeal();
       },
     },
     delimiters: ["[[", "]]"],

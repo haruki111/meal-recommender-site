@@ -4,8 +4,8 @@ from .models import Meal, Tag, MealRating
 from .forms import CreateForm, DetailForm
 from django.http import JsonResponse, HttpResponseServerError
 from django.urls import reverse_lazy
-from django.db.models import Q
 import json
+from django.db.models import Avg
 
 
 class IndexView(TemplateView):
@@ -38,7 +38,7 @@ class MealCreateView(LoginRequiredMixin, FormView):
         return super().form_valid(form)
 
 
-class HistoryView(TemplateView):
+class HistoryView(LoginRequiredMixin, TemplateView):
     template_name = 'recommender/history.html'
     model = Meal
 
@@ -65,23 +65,35 @@ def index_axios(request):
         meals = Meal.objects.all().order_by('-dateAdded')[0:6]
         tags = Tag.objects.all()
 
-        results = {'meals': get_meal_results(meals[0:6])}
+        results = {'meals': get_meal_results(meals)}
         results.update({'tags': {'name': [tag.name for tag in tags],
                                  'id': [tag.pk for tag in tags]}})
         results.update({'mealsNum': Meal.objects.all().count()})
         results.update({'nowOrder': 1})
+
+        if request.user.is_authenticated:
+            recommendMeals = Meal.objects.exclude(
+                user=request.user).order_by("?")[:5]
+            test = sorted(
+                Meal.objects.all(), key=lambda meal: meal.avgRating(), reverse=True)
+
+            results.update({'recommended': get_meal_results(recommendMeals)})
+        else:
+            results.update({'recommended': []})
 
         return JsonResponse(results, safe=False)
 
     if request.method == "POST":
         selectChips = json.loads(request.POST.get("selectChips"))
         rangeMeals = json.loads(request.POST.get("rangeMeals"))
+        orderBy = json.loads(request.POST.get("orderBy"))
+
         sl = slice(6 * (rangeMeals-1), 6 * rangeMeals)
 
         meals = []
         # All選択時
         if selectChips[0] == 0:
-            meals = Meal.objects.all().order_by('-dateAdded')
+            meals = Meal.objects.all()
         else:
             meals = Meal.objects.filter(tag=selectChips[0])
 
@@ -90,7 +102,16 @@ def index_axios(request):
                 for selectChip in selectChips[1:]:
                     meals = meals.filter(tag=selectChip)
 
-        mealsNum = meals.count()
+        mealsNum = 0
+
+        if orderBy == 'avgRating':
+            meals = sorted(
+                meals, key=lambda meal: meal.avgRating(), reverse=True)
+            mealsNum = len(meals)
+        else:
+            meals = meals.order_by('-'+orderBy)
+            mealsNum = meals.count()
+
         return JsonResponse({"status": 'Success', 'result': get_meal_results(meals[sl]), 'nowOrder': (rangeMeals-1)*6 + 1, 'mealsNum': mealsNum})
 
 
@@ -108,7 +129,8 @@ def get_meal_results(meals):
                 "dateAdded": meal.dateAdded,
                 "id": int(meal.pk),
                 "avgRating": int(meal.avgRating()),
-                "numberOfVotes": int(meal.numberOfVotes())
+                "numberOfVotes": int(meal.numberOfVotes()),
+                'comparisonDate': str(meal.comparisonDate())
             }
         )
 

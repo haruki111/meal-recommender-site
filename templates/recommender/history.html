@@ -28,7 +28,7 @@
   </div>
   <div class="col-5 mx-3">
     <h3>Like</h3>
-    {% for likeMeal in likeMeals %} {{meals}}
+    {% for likeMeal in likeMeals %}
     <a
       href="{% url 'recommender:detail' likeMeal.meal.pk %}"
       class="card text-decoration-none text-body d-flex flex-row mb-3"
