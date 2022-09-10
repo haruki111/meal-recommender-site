@@ -74,8 +74,6 @@ def index_axios(request):
         if request.user.is_authenticated:
             recommendMeals = Meal.objects.exclude(
                 user=request.user).order_by("?")[:5]
-            test = sorted(
-                Meal.objects.all(), key=lambda meal: meal.avgRating(), reverse=True)
 
             results.update({'recommended': get_meal_results(recommendMeals)})
         else:
@@ -128,7 +126,7 @@ def get_meal_results(meals):
                 "user": str(meal.user),
                 "dateAdded": meal.dateAdded,
                 "id": int(meal.pk),
-                "avgRating": int(meal.avgRating()),
+                "avgRating": meal.avgRating(),
                 "numberOfVotes": int(meal.numberOfVotes()),
                 'comparisonDate': str(meal.comparisonDate())
             }
