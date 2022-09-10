@@ -13,7 +13,8 @@
   <div class="text-start">
     <p>County Origin: {{meal.countryOfOrigin}}</p>
     <p>Description: {{meal.description}}</p>
-    <p>Score: [[avgRating]]([[votes]])</p>
+    <p v-if="votes">Score: [[avgRating]]([[votes]])</p>
+    <p v-else>Score: まだ投稿されていません</p>
   </div>
 
   {% if meal.user != request.user %} {% if not user.is_anonymous %}
